@@ -73,12 +73,12 @@ namespace Stellar.Pluralize.Tests
         [Theory]
         [InlineData("confetto", "confetti")] // not confettos
         [InlineData("cul-de-sac", "culs-de-sac")] // not cul-de-sacs
+        [InlineData("regex", "regexii")] // not regexes
         public void HandlesNewRules(string singular, string plural)
         {
             Assert.NotEqual(plural, _pluralizer.Pluralize(singular));
             Assert.NotEqual(singular, _pluralizer.Singularize(plural));
 
-            // avoid interference with parallel tests
             var pluralizer = new Pluralizer();
             
             pluralizer.AddPlural(singular, plural);
@@ -89,6 +89,23 @@ namespace Stellar.Pluralize.Tests
         }
 
         [Theory]
+        [InlineData("person", "persons", "people")]
+        public void HandlesNewOrUpdatedIrregulars(string singular, string plural, string original)
+        {
+            Assert.NotEqual(plural, _pluralizer.Pluralize(singular));
+            Assert.Equal(singular, _pluralizer.Singularize(plural));
+            Assert.Equal(singular, _pluralizer.Singularize(original));
+
+            var pluralizer = new Pluralizer();
+            
+            pluralizer.AddOrUpdateIrregular(singular, plural);
+
+            Assert.Equal(plural, pluralizer.Pluralize(singular));
+            Assert.Equal(singular, pluralizer.Singularize(plural));
+            Assert.Equal(singular, pluralizer.Singularize(original));
+        }
+
+        [Theory]
         [InlineData("mean", "means")]
         [InlineData("vertebra", "vertebrae")]
         public void HandlesNewUncountables(string singular, string plural)
@@ -96,7 +113,6 @@ namespace Stellar.Pluralize.Tests
             Assert.Equal(plural, _pluralizer.Pluralize(singular));
             Assert.Equal(singular, _pluralizer.Singularize(plural));
             
-            // avoid interference with parallel tests
             var pluralizer = new Pluralizer();
 
             pluralizer.AddUncountable(singular);
@@ -107,15 +123,26 @@ namespace Stellar.Pluralize.Tests
         }
         
         [Theory]
-        [InlineData("vertebra", 3, false, "vertebrae")]
-        [InlineData("vertebra", 3, true, "3 vertebrae")]
-        [InlineData("dogs", 1, true, "1 dog")]
-        [InlineData("dog", 5000, true, "5,000 dogs")]
-        [InlineData("vote", 11, false, "votes")]
-        [InlineData("vote", 11, true, "11 votes")]
-        public void Formats(string word, int count, bool inclusive, string expected)
+        [InlineData("vertebra", 3, "3 vertebrae")]
+        [InlineData("dogs", 1, "1 dog")]
+        [InlineData("dog", 5000, "5000 dogs")]
+        [InlineData("vote", 11, "11 votes")]
+        public void FormatsWithoutFormat(string word, int count, string expected)
         {
-            Assert.Equal(expected, _pluralizer.Format(word, count, inclusive));
+            Assert.Equal(expected, _pluralizer.Format(word, count));
+        }
+
+        [Theory]
+        [InlineData("vertebra", 3, null, "vertebrae")]
+        [InlineData("vertebra", 3, "", "vertebrae")]
+        [InlineData("vertebra", 3, " ", "vertebrae")]
+        [InlineData("vertebra", 3, "    ", "vertebrae")] // Tab
+        [InlineData("dog", 5000, "",   "dogs")]
+        [InlineData("dog", 5000, "N0", "5,000 dogs")]
+        [InlineData("person", 11, "N2", "11.00 people")]
+        public void FormatsWithFormat(string word, int count, string format, string expected)
+        {
+            Assert.Equal(expected, _pluralizer.Format(word, count, format));
         }
     }
 }

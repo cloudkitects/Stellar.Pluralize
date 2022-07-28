@@ -48,13 +48,27 @@ namespace Stellar.Pluralize
             return Pluralize(word) == word;
         }
 
-        public string Format(string word, int count, bool inclusive = false)
+        public string Format(string word, int count, string format = "G")
         {
-            var pluralized = count == 1
+            var quantified = count == 1
                 ? Singularize(word)
                 : Pluralize(word);
 
-            return (inclusive ? count.ToString("N0") + " " : "") + pluralized;
+            if (string.IsNullOrWhiteSpace(format))
+            {
+                return quantified;
+            }
+            
+            try
+            {
+                format = count.ToString(format);
+            }
+            catch
+            {
+                format = count.ToString("G");
+            }
+
+            return $"{format} {quantified}";
         }
 
         private static string RestoreCase(string word, string newWord)
