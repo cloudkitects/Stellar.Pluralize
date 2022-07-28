@@ -11,7 +11,7 @@ pluralizer.Pluralize("House");     // returns "Houses"
 pluralizer.Singularize("Geese");  // returns "Goose"
 
 // add a plural rule
-pluralizer.AddPlural("gex, "gexii");
+pluralizer.AddPlural("gex", "gexii");
 pluralizer.Pluralize("regex"); // returns "regexii", not "regexes"
 
 // add a singular rule
