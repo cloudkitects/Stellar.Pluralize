@@ -7,7 +7,7 @@ You can add rules to the rule sets or pass in new rule sets to the pluralizer co
 
 The add or update helpers take in regex strings and optional regex options and will throw for invalid regex patterns.
 
-Interpolated $0, $1, etc. literals in rule replacement values are shortcuts to the match, tyoically $0 for the entire word, $1 for the root.
+Interpolated $0, $1, etc. literals in rule replacement values are shortcuts to the match. $0 matches the entire word and $1 typically matches the root.
 
 # Usage
 ```C#
