@@ -1,5 +1,7 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
+[assembly:InternalsVisibleTo("Stellar.Pluralize.Tests")]
 namespace Stellar.Pluralize
 {
     public abstract class PluralizerBase : IPluralizer
@@ -52,7 +54,7 @@ namespace Stellar.Pluralize
                 ? Singularize(word)
                 : Pluralize(word);
 
-            return (inclusive ? count + " " : "") + pluralized;
+            return (inclusive ? count.ToString("N0") + " " : "") + pluralized;
         }
 
         private static string RestoreCase(string word, string newWord)
@@ -83,11 +85,6 @@ namespace Stellar.Pluralize
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="word"></param>
-        /// <param name="replaceables"></param>
-        /// <param name="replacements"></param>
-        /// <param name="rules"></param>
-        /// <returns></returns>
         /// <remarks>
         /// Iterates over the rules backwards to prioritize user specific/custom rules.
         /// </remarks>
@@ -141,7 +138,7 @@ namespace Stellar.Pluralize
         }
 
         #region add rules
-        private static string SanitizeRegex(string regex)
+        internal static string SanitizeRegex(string regex)
         {
             return $"{(regex[0] != '^' ? "^" : "")}{regex}{(regex[^1] != '$' ? "$" : "")}";
         }
