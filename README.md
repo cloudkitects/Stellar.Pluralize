@@ -1,49 +1,62 @@
 # Stellar.Pluralize
 This is a **breaking** .NET 6.0 refactor of Sarath KCM's [Pluralize.NET](https://github.com/sarathkcm/Pluralize.NET) library.
 
-This library pluralizes or singularizes almost any English word based on built-in, default rule sets for plural, singular, irregular and uncountable words. The sets are both partially extensible and completely overridable.
+This library pluralizes or singularizes almost any English word based on built-in, default rule sets for plural, singular, irregular and uncountable words.
+
+You can add rules to the rule sets or pass in new rule sets to the pluralizer constructors.
+
+The add or update helpers take in regex strings and optional regex options and will throw for invalid regex patterns.
 
 # Usage
 ```C#
 IPluralize pluralizer = new Pluralizer();
 
-pluralizer.Pluralize("House");     // returns "Houses"
-pluralizer.Singularize("Geese");  // returns "Goose"
+pluralizer.Pluralize("House");   // Houses
+pluralizer.Singularize("Geese"); // Goose
 
 // add a plural rule
 pluralizer.AddPlural("gex", "gexii");
-pluralizer.Pluralize("regex"); // returns "regexii", not "regexes"
+pluralizer.Pluralize("regex"); // regexii, not regexes
 
-// add a singular rule
-pluralizer.AddSingular("singles", "singular");
-pluralizer.Singularize("singles"); // returns "singular", not "singles"
+// add two-way rules
+pluralizer.AddPlural("(a|si)ngle", "$1ngular");
+pluralizer.AddSingular("(a|si)ngular", "$1ngle");
+pluralizer.Pluralize("single");    // singular, not singles
+pluralizer.Singularize("angular"); // angle
 
 // add or update an irregular
 pluralizer.AddorUpdateIrregular("person", "persons");
-pluralizer.Pluralize("person");    // returns "persons", not "people"
-pluralizer.Singularize("persons"); // returns "person"
-pluralizer.Singularize("people");  // returns "person"
+pluralizer.Pluralize("person");    // persons, not people
+pluralizer.Singularize("persons"); // person
+pluralizer.Singularize("people");  // person
 
 // add an uncountable
 pluralizer.AddUncountable("paper");
-pluralizer.Pluralize("paper"); // returns "paper", not "papers"
+pluralizer.Pluralize("paper"); // paper, not papers
 
-// test a word
-pluralizer.IsPlural("test"); // returns false
-pluralizer.IsSingular("test"); // returns true
+// invalid rules throw System.Text.RegularExpressions.RegexParseException
+new Rule(/* language=regex */ "([^a-z).*", ""); // throws
+_pluralizer.AddPlural("a|si)ngle", "$1ngular"); // throws
+_pluralizer.AddUncountable("(|bogus.*");        // throws
+
+// test a word's count
+pluralizer.IsPlural("test");   // false
+pluralizer.IsSingular("test"); // true
 
 // format a word based on count
-pluralizer.Format(1, "dogs"); //  returns "1 dog"
+pluralizer.Format(7, "dog");  // 7 dogs
+pluralizer.Format(1, "dogs"); // 1 dog
+pluralizer.Format(0, "cat");  // 0 dogs... jk, 0 cats :)
 
 // format a word based on count with format
-pluralizer.Format(5000, "house"); //  returns "5000 houses" (format default = "G")
-pluralizer.Format(5000, "house", "N0"); //  returns "5,000 houses"
-pluralizer.Format(11, "person", "N2"); //  returns "11.00 people"
+pluralizer.Format(5000, "house");       // 5000 houses
+pluralizer.Format(5000, "house", "N0"); // 5,000 houses
+pluralizer.Format(11, "person", "N2");  // 11.00 people
 
-// format a word without the count with null, empty or whitespace format 
-pluralizer.Format(5000, "house", null); //  returns "houses"
-pluralizer.Format(5000, "house", ""); //  returns "houses"
-pluralizer.Format(5000, "house", " "); //  returns "houses"
+// format a word without the count 
+pluralizer.Format(5000, "house", null); // houses
+pluralizer.Format(5000, "house", "");   // houses
+pluralizer.Format(1, "houses", " ");    // house
 ```
 
 # Licence
