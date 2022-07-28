@@ -3,7 +3,7 @@
     public static class Rules
     {
         /// <summary>
-        /// A list of plural rules ordered by descending genericness.
+        /// A list of pluralization rules ordered by descending genericness.
         /// </summary>
         public static readonly List<Rule> Plurals = new()
         { 
@@ -42,7 +42,7 @@
         };
 
         /// <summary>
-        /// A list of singular rules ordered by descending genericness.
+        /// A list of singularization rules ordered by descending genericness.
         /// </summary>
         public static readonly List<Rule> Singulars = new()
         {
@@ -178,7 +178,7 @@
         };
 
         /// <summary>
-        /// A dictionary of English irregular rules.
+        /// A dictionary of English irregular pluralization rules.
         /// </summary>
         public static readonly Dictionary<string, string> Irregulars = new (StringComparer.OrdinalIgnoreCase)
         {
