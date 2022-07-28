@@ -34,7 +34,7 @@ pluralizer.Singularize("people");  // person
 pluralizer.AddUncountable("paper");
 pluralizer.Pluralize("paper"); // paper, not papers
 
-// invalid rules throw System.Text.RegularExpressions.RegexParseException
+// invalid regex ptterns throw a RegexParseException
 new Rule(/* language=regex */ "([^a-z).*", ""); // throws
 _pluralizer.AddPlural("a|si)ngle", "$1ngular"); // throws
 _pluralizer.AddUncountable("(|bogus.*");        // throws
