@@ -20,8 +20,9 @@ pluralizer.IsSingular("cats"); // false
 pluralizer.Format(7, "dog");  // 7 dogs
 pluralizer.Format(1, "dogs"); // 1 dog
 pluralizer.Format(0, "cat");  // 0 dogs... jk, 0 cats :)
-
-// format a word based on count with format
+```
+## Format or remove count
+```C#
 pluralizer.Format(5000, "house");       // 5000 houses
 pluralizer.Format(5000, "house", "N0"); // 5,000 houses
 pluralizer.Format(11, "person", "N2");  // 11.00 people
@@ -30,7 +31,10 @@ pluralizer.Format(11, "person", "N2");  // 11.00 people
 pluralizer.Format(5000, "house", null); // houses
 pluralizer.Format(5000, "house", "");   // houses
 pluralizer.Format(1, "houses", " ");    // house
+```
 
+## Adding rules
+```C#
 // add a plural rule
 pluralizer.AddPlural("gex", "gexii");
 pluralizer.Pluralize("regex"); // regexii, not regexes
@@ -50,21 +54,28 @@ pluralizer.Singularize("people");  // person
 // add an uncountable
 pluralizer.AddUncountable("paper");
 pluralizer.Pluralize("paper"); // paper, not papers
+```
 
-// add generic rules
+## Adding generic rules
+```C#
 pluralizer.AddPlural(  /* language=regex */ @"(\w+)([-\w]+)+",  "$1s$2");
 pluralizer.AddSingular(/* language=regex */ @"(\w+)s([-\w]+)+", "$1$2");
 pluralizer.Pluralize("cul-de-sac");       // culs-de-sac, not cul-de-sacs
 pluralizer.Singularize("mothers-in-law"); // mother-in-law
 pluralizer.Pluralize("one-half");         // ones-half
+```
 
-// add less generic rules
+## Adding less generic rules
+```C#
 pluralizer.AddPlural(  /* language=regex */ @"((cul|mother)(-de-sac|-in-law))",  "$2s$3");
 pluralizer.AddSingular(/* language=regex */ @"((cul|mother)s(-de-sac|-in-law))", "$2$3");
 pluralizer.Pluralize("cul-de-sac");       // culs-de-sac
 pluralizer.Singularize("mothers-in-law"); // mother-in-law
 pluralizer.Pluralize("one-half");         // one-halves
+```
 
+## Exceptions
+```C#
 // invalid regex patterns throw a RegexParseException
 new Rule(/* language=regex */ "([^a-z).*", ""); // throws
 _pluralizer.AddPlural("a|si)ngle", "$1ngular"); // throws
