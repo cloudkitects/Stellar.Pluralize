@@ -1,13 +1,9 @@
 # Stellar.Pluralize
 This is a **breaking** .NET 6.0 refactor of Sarath KCM's [Pluralize.NET](https://github.com/sarathkcm/Pluralize.NET) library.
 
-This library pluralizes or singularizes almost any English word based on built-in, default rule sets for plural, singular, irregular and uncountable words.
+This library pluralizes or singularizes almost any English word based on built-in and/or user-defined rules for plural, singular, irregular and uncountable words.
 
-You can add rules to the rule sets or pass in new rule sets to the pluralizer constructors.
-
-The add or update helpers take in regex strings and optional regex options and will throw for invalid regex patterns.
-
-$0, $1, etc. literals in rule replacement values are interpolated with captured groups. $0 matches the entire word and $1 typically the root.
+Rule add or update helpers take in regex patterns and a replacement string with `$n` interpolation placeholders for matches, and will throw for invalid regex patterns.
 
 # Usage
 ```C#
