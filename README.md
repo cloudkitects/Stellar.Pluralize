@@ -7,7 +7,7 @@ You can add rules to the rule sets or pass in new rule sets to the pluralizer co
 
 The add or update helpers take in regex strings and optional regex options and will throw for invalid regex patterns.
 
-Interpolated $0, $1, etc. literals in rule replacement values are shortcuts to the match. $0 matches the entire word and $1 typically matches the root.
+$0, $1, etc. literals in rule replacement values are interpolated with captured groups. $0 matches the entire word and $1 typically the root.
 
 # Usage
 ```C#
@@ -25,6 +25,20 @@ pluralizer.AddPlural("(a|si)ngle", "$1ngular");
 pluralizer.AddSingular("(a|si)ngular", "$1ngle");
 pluralizer.Pluralize("single");    // singular, not singles
 pluralizer.Singularize("angular"); // angle
+
+// add generic rules
+pluralizer.AddPlural(  /* language=regex */ @"(\w+)([-\w]+)+",  "$1s$2");
+pluralizer.AddSingular(/* language=regex */ @"(\w+)s([-\w]+)+", "$1$2");
+pluralizer.Pluralize("cul-de-sac");       // culs-de-sac
+pluralizer.Singularize("mothers-in-law"); // mother-in-laws
+pluralizer.Pluralize("one-half");         // ones-half, not one-halves (incorrect)
+
+// add less generic rules
+pluralizer.AddPlural(  /* language=regex */ @"((cul|mother)(-de-sac|-in-law))",  "$2s$3");
+pluralizer.AddSingular(/* language=regex */ @"((cul|mother)s(-de-sac|-in-law))", "$2$3");
+pluralizer.Pluralize("cul-de-sac");       // culs-de-sac
+pluralizer.Singularize("mothers-in-law"); // mother-in-laws
+pluralizer.Pluralize("one-half");         // one-halves
 
 // add or update an irregular
 pluralizer.AddorUpdateIrregular("person", "persons");
