@@ -78,22 +78,22 @@ namespace Stellar.Pluralize
                 return newWord;
             }
 
-            if (word == word.ToLower())
+            if (word == word.ToLowerInvariant())
             {
-                return newWord.ToLower();
+                return newWord.ToLowerInvariant();
             }
 
-            if (word == word.ToUpper())
+            if (word == word.ToUpperInvariant())
             {
-                return newWord.ToUpper();
+                return newWord.ToUpperInvariant();
             }
 
-            if (word == word.ToTitle())
+            if (word == word[0].ToString().ToUpperInvariant() + word[1..].ToLowerInvariant())
             {
-                return newWord.ToTitle();
+                return newWord[0].ToString().ToUpperInvariant() + newWord[1..].ToLowerInvariant();
             }
 
-            return newWord.ToLower();
+            return newWord.ToLowerInvariant();
         }
 
         /// <summary>
@@ -171,8 +171,8 @@ namespace Stellar.Pluralize
         {
             _uncountables.Add(word);
 
-            _plurals.Add(new Rule(SanitizeRegex(word), "$0"));
-            _singulars.Add(new Rule(SanitizeRegex(word), "$0"));
+            AddPlural(word, "$0");
+            AddSingular(word, "$0");
         }
 
         public void AddOrUpdateIrregular(string singular, string plural)

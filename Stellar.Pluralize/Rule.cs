@@ -24,10 +24,6 @@ namespace Stellar.Pluralize
         /// </summary>
         public Rule(string regex, string replacement, RegexOptions options = RegexOptions.IgnoreCase)
         {
-            //var sanitized = $"{(regex[0] != '^' ? "^" : "")}{regex}{(regex[^1] != '$' ? "$" : "")}";
-
-            //Regex = new Regex(sanitized, options);
-
             Regex = new Regex(regex, options);
             Replacement = replacement;
         }
