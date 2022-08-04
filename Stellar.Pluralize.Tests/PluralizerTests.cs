@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Stellar.Pluralize.Tests
 {
     public class PluralizerTests
@@ -31,16 +33,6 @@ namespace Stellar.Pluralize.Tests
 
             Assert.Equal(regex1, PluralizerBase.SanitizeRegex(regex1));
             Assert.Equal(regex1, PluralizerBase.SanitizeRegex(regex2));
-        }
-
-        [Theory]
-        [InlineData("for whom the bell tolls", "For Whom the Bell Tolls")]
-        [InlineData("girl on a train", "Girl On a Train")]
-        [InlineData("a visit from the Goon Squad", "A Visit From the Goon Squad")]
-        [InlineData("a string value, e.g., a STRING value", "A String Value, e.g., a String Value")]
-        public void Capitalizes(string sentence, string expected)
-        {
-            Assert.Equal(expected, sentence.ToTitle());
         }
 
         [Theory]
@@ -79,30 +71,79 @@ namespace Stellar.Pluralize.Tests
             Assert.NotEqual(plural, _pluralizer.Pluralize(singular));
             Assert.NotEqual(singular, _pluralizer.Singularize(plural));
 
-            var pluralizer = new Pluralizer();
-            
-            pluralizer.AddPlural(singular, plural);
-            pluralizer.AddSingular(plural, singular);
+            _pluralizer.AddPlural(singular, plural);
+            _pluralizer.AddSingular(plural, singular);
 
-            Assert.Equal(plural, pluralizer.Pluralize(singular));
-            Assert.Equal(singular, pluralizer.Singularize(plural));
+            Assert.Equal(plural, _pluralizer.Pluralize(singular));
+            Assert.Equal(singular, _pluralizer.Singularize(plural));
         }
 
         [Theory]
-        [InlineData("person", "persons", "people")]
-        public void HandlesNewOrUpdatedIrregulars(string singular, string plural, string original)
+        [InlineData("single", "singular")] // not singles
+        [InlineData("angle", "angular")] // not singles
+        public void HandlesNewRules2(string word, string expected)
         {
-            Assert.NotEqual(plural, _pluralizer.Pluralize(singular));
+            _pluralizer.AddPlural("((a|si)ng)le", "$1ular");
+            _pluralizer.AddSingular("((a|si)ng)ular", "$1le");
+
+            var pluralized = _pluralizer.Pluralize(word);
+
+            Assert.Equal(expected, pluralized);
+            Assert.Equal(word, _pluralizer.Singularize(pluralized));
+        }
+
+        [Theory]
+        [InlineData("cul-de-sac", "culs-de-sac")]
+        [InlineData("mother-in-law", "mothers-in-law")]
+        [InlineData("one-half", "ones-half")] // incorrect
+        public void HandlesNewRules3(string word, string expected)
+        {
+            _pluralizer.AddPlural(  /* language=regex */ @"(\w+)([-\w]+)+",  "$1s$2");
+            _pluralizer.AddSingular(/* language=regex */ @"(\w+)s([-\w]+)+", "$1$2");
+
+            var pluralized = _pluralizer.Pluralize(word);
+
+            Assert.Equal(expected, pluralized);
+            Assert.Equal(word, _pluralizer.Singularize(pluralized));
+        }
+
+        [Theory]
+        [InlineData("cul-de-sac", "culs-de-sac")]
+        [InlineData("mother-in-law", "mothers-in-law")]
+        [InlineData("one-half", "one-halves")]
+        public void HandlesNewRules4(string word, string expected)
+        {
+            _pluralizer.AddPlural(  /* language=regex */ @"((cul|mother)(-de-sac|-in-law))",  "$2s$3");
+            _pluralizer.AddSingular(/* language=regex */ @"((cul|mother)s(-de-sac|-in-law))", "$2$3");
+
+            var pluralized = _pluralizer.Pluralize(word);
+
+            Assert.Equal(expected, pluralized);
+            Assert.Equal(word, _pluralizer.Singularize(pluralized));
+        }
+
+        [Fact]
+        public void HandlesInvalidRules()
+        {
+            Assert.Throws<RegexParseException>(() => _pluralizer.AddPlural("a|si)ngle", "$1ngular"));
+            Assert.Throws<RegexParseException>(() => _pluralizer.AddSingular("([^a-z).*", "$1"));
+            Assert.Throws<RegexParseException>(() => _pluralizer.AddUncountable("(|bogus.*"));
+        }
+
+        [Theory]
+        [InlineData("person", "people", "persons")]
+        [InlineData("schema", "schemata", "schemas")]
+        public void HandlesNewOrUpdatedIrregulars(string singular, string plural, string irregular)
+        {
+            Assert.Equal(plural, _pluralizer.Pluralize(singular));
             Assert.Equal(singular, _pluralizer.Singularize(plural));
-            Assert.Equal(singular, _pluralizer.Singularize(original));
+            Assert.NotEqual(irregular, _pluralizer.Pluralize(singular));
 
-            var pluralizer = new Pluralizer();
-            
-            pluralizer.AddOrUpdateIrregular(singular, plural);
+            _pluralizer.AddOrUpdateIrregular(singular, irregular);
 
-            Assert.Equal(plural, pluralizer.Pluralize(singular));
-            Assert.Equal(singular, pluralizer.Singularize(plural));
-            Assert.Equal(singular, pluralizer.Singularize(original));
+            Assert.Equal(irregular, _pluralizer.Pluralize(singular));
+            Assert.Equal(singular, _pluralizer.Singularize(irregular));
+            Assert.Equal(singular, _pluralizer.Singularize(plural));
         }
 
         [Theory]
@@ -113,13 +154,11 @@ namespace Stellar.Pluralize.Tests
             Assert.Equal(plural, _pluralizer.Pluralize(singular));
             Assert.Equal(singular, _pluralizer.Singularize(plural));
             
-            var pluralizer = new Pluralizer();
-
-            pluralizer.AddUncountable(singular);
-            pluralizer.AddUncountable(plural);
+            _pluralizer.AddUncountable(singular);
+            _pluralizer.AddUncountable(plural);
             
-            Assert.Equal(singular, pluralizer.Pluralize(singular));
-            Assert.Equal(plural, pluralizer.Singularize(plural));
+            Assert.Equal(singular, _pluralizer.Pluralize(singular));
+            Assert.Equal(plural, _pluralizer.Singularize(plural));
         }
         
         [Theory]
@@ -127,6 +166,7 @@ namespace Stellar.Pluralize.Tests
         [InlineData("dogs", 1, "1 dog")]
         [InlineData("dog", 5000, "5000 dogs")]
         [InlineData("vote", 11, "11 votes")]
+        [InlineData("cat", 0, "0 cats")]
         public void FormatsWithoutFormat(string word, int count, string expected)
         {
             Assert.Equal(expected, _pluralizer.Format(word, count));
