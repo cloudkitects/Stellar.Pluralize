@@ -48,6 +48,11 @@ namespace Stellar.Pluralize
             return Pluralize(word) == word;
         }
 
+        /// <remarks>
+        /// TODO: word:format and other numeric count
+        /// TODO: null or empty format is an indicator for no number display
+        /// TODO: don't overwrite format (better try/catch)
+        /// </remarks>
         public string Format(string word, int count, string format = "G")
         {
             var quantified = count == 1

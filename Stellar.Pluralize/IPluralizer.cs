@@ -12,6 +12,9 @@ namespace Stellar.Pluralize
         
         bool IsSingular(string word);
         
+        /// <remarks>
+        /// TODO: word:format and other numeric count
+        /// </remarks>
         string Format(string word, int count, string format = "G");
         
         void AddPlural(string regex, string plural, RegexOptions options = RegexOptions.IgnoreCase);
