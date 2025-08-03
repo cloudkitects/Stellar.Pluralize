@@ -10,18 +10,19 @@ public static class Extensions
         return char.ToUpperInvariant(value[0]) + value[1..].ToLowerInvariant();
     }
 
+    public static string Inflect(this string word, bool pluralize = true)
+    {
+        return new Pluralizer().Inflect(word, pluralize);
+    }
+
     public static string Pluralize(this string word)
     {
-        return new Pluralizer().Pluralize(word);
+        return word.Inflect();
     }
 
     public static string Singularize(this string word)
     {
-        return new Pluralizer().Singularize(word);
-    }
-    public static string Inflect(this string word, bool pluralize = true)
-    {
-        return new Pluralizer().Inflect(word, pluralize);
+        return word.Inflect(true);
     }
 
     public static string Inflect<T>(this string word, T count, string? format = null) where T : INumber<T>
