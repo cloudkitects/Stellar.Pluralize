@@ -13,7 +13,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/cloudkitects/Stellar.Pluralizer</PackageProjectUrl>
-    <PackageId>Stellar.Pluralizer</PackageId>
+    <PackageId>Stellar.Pluralize</PackageId>
     <RepositoryUrl>https://github.com/cloudkitects/Stellar.Pluralize</RepositoryUrl>
     <PackageReleaseNotes>DRYer extensions.</PackageReleaseNotes>
   </PropertyGroup>
