@@ -1,188 +1,240 @@
 using System.Text.RegularExpressions;
 
-namespace Stellar.Pluralize.Tests
+namespace Stellar.Pluralize.Tests;
+
+public class PluralizerTests
 {
-    public class PluralizerTests
+    private readonly Pluralizer pluralizer = new();
+
+    #region test data
+    private static TheoryData<string, string> FromResourcePairs(string data)
     {
-        #region parse test data
-        /// <summary>
-        /// Data reader helper.
-        /// </summary>
-        /// <param name="data">A string, typically the contents of a CSV file resource.</param>
-        /// <returns>The file contents as data (a list of singular and plural pairs).</returns>
-        private static IEnumerable<object[]> ParseData(string data)
+        var theoryData = new TheoryData<string, string>();
+
+        foreach (var line in data.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries))
         {
-            return data.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(line => line.Split(','))
-            .Select(pair => new object[] { pair[0], pair[1] })
-            .ToList();
+            var pair = line.Split(',');
+
+            theoryData.Add(pair[0], pair[1]);
         }
 
-        public static IEnumerable<object[]> Words => ParseData(Resources.Words);
-        public static IEnumerable<object[]> Singulars => ParseData(Resources.Singulars);
-        public static IEnumerable<object[]> Plurals => ParseData(Resources.Plurals);
-        #endregion
+        return theoryData;
+    }
 
-        private readonly Pluralizer _pluralizer = new();
+    private static TheoryData<string, string, string> FromResourceTrios(string data)
+    {
+        var theoryData = new TheoryData<string, string, string>();
 
-        [Fact]
-        public void SanitizesRegexes()
+        foreach (var line in data.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries))
         {
-            /* language=regex */ var regex1 = "^hello$";
-            /* language=regex */ var regex2 = "hello";
+            var pair = line.Split(',');
 
-            Assert.Equal(regex1, PluralizerBase.SanitizeRegex(regex1));
-            Assert.Equal(regex1, PluralizerBase.SanitizeRegex(regex2));
+            theoryData.Add(pair[0], pair[1], pair[2]);
         }
 
-        [Theory]
-        [MemberData(nameof(Words))]
-        public void HandlesWords(string singular, string plural)
-        {
-            Assert.Equal(singular, _pluralizer.Singularize(plural));
-            Assert.Equal(plural, _pluralizer.Pluralize(singular));
+        return theoryData;
+    }
 
-            Assert.Equal(singular, _pluralizer.Singularize(singular));
-            Assert.Equal(plural, _pluralizer.Pluralize(plural));
-        }
+    public static readonly TheoryData<string, string> Regexes = new()
+    {
+        { "^hello$", "^hello$" },
+        { "hello", "^hello$" }
+    };
 
-        [Theory]
-        [MemberData(nameof(Plurals))]
-        public void HandlesPluralExceptions(string singular, string plural)
-        {
-            Assert.Equal(singular, _pluralizer.Singularize(plural));
-            Assert.Equal(singular, _pluralizer.Singularize(singular));
-        }
+    public static readonly TheoryData<string, string> NewRules = new()
+    {
+        { "confetto", "confetti" },      // not confettos
+        { "cul-de-sac", "culs-de-sac" }, // not cul-de-sacs
+        { "regex", "regexii" }           // not regexes
+    };
+    #endregion
 
-        [Theory]
-        [MemberData(nameof(Singulars))]
-        public void HandlesSingularExceptions(string singular, string plural)
-        {
-            Assert.Equal(plural, _pluralizer.Pluralize(singular));
-            Assert.Equal(plural, _pluralizer.Pluralize(plural));
-        }
+    [Theory]
+    [MemberData(nameof(Regexes))]
+    public void QualifiesRegexes(string input, string output)
+    {
+        Assert.Equal(output, Pluralizer.QualifyRegex(input));
+    }
 
-        [Theory]
-        [InlineData("confetto", "confetti")] // not confettos
-        [InlineData("cul-de-sac", "culs-de-sac")] // not cul-de-sacs
-        [InlineData("regex", "regexii")] // not regexes
-        public void HandlesNewRules(string singular, string plural)
-        {
-            Assert.NotEqual(plural, _pluralizer.Pluralize(singular));
-            Assert.NotEqual(singular, _pluralizer.Singularize(plural));
+    public static TheoryData<string, string> Words => FromResourcePairs(Resources.Words);
 
-            _pluralizer.AddPlural(singular, plural);
-            _pluralizer.AddSingular(plural, singular);
+    [Theory]
+    [MemberData(nameof(Words))]
+    public void HandlesWords(string singular, string plural)
+    {
+        Assert.Equal(singular, pluralizer.Singularize(plural));
+        Assert.Equal(plural, pluralizer.Pluralize(singular));
 
-            Assert.Equal(plural, _pluralizer.Pluralize(singular));
-            Assert.Equal(singular, _pluralizer.Singularize(plural));
-        }
+        Assert.Equal(singular, pluralizer.Singularize(singular));
+        Assert.Equal(plural, pluralizer.Pluralize(plural));
+    }
 
-        [Theory]
-        [InlineData("single", "singular")] // not singles
-        [InlineData("angle", "angular")] // not singles
-        public void HandlesNewRules2(string word, string expected)
-        {
-            _pluralizer.AddPlural("((a|si)ng)le", "$1ular");
-            _pluralizer.AddSingular("((a|si)ng)ular", "$1le");
+    public static TheoryData<string, string> Plurals => FromResourcePairs(Resources.Plurals);
 
-            var pluralized = _pluralizer.Pluralize(word);
+    [Theory]
+    [MemberData(nameof(Plurals))]
+    public void HandlesPluralExceptions(string singular, string plural)
+    {
+        Assert.Equal(singular, pluralizer.Singularize(plural));
+        Assert.Equal(singular, pluralizer.Singularize(singular));
+    }
 
-            Assert.Equal(expected, pluralized);
-            Assert.Equal(word, _pluralizer.Singularize(pluralized));
-        }
+    public static TheoryData<string, string> Singulars => FromResourcePairs(Resources.Singulars);
 
-        [Theory]
-        [InlineData("cul-de-sac", "culs-de-sac")]
-        [InlineData("mother-in-law", "mothers-in-law")]
-        [InlineData("one-half", "ones-half")] // incorrect
-        public void HandlesNewRules3(string word, string expected)
-        {
-            _pluralizer.AddPlural(  /* language=regex */ @"(\w+)([-\w]+)+",  "$1s$2");
-            _pluralizer.AddSingular(/* language=regex */ @"(\w+)s([-\w]+)+", "$1$2");
+    [Theory]
+    [MemberData(nameof(Singulars))]
+    public void HandlesSingularExceptions(string singular, string plural)
+    {
+        Assert.Equal(plural, pluralizer.Pluralize(singular));
+        Assert.Equal(plural, pluralizer.Pluralize(plural));
+    }
 
-            var pluralized = _pluralizer.Pluralize(word);
+    [Theory]
+    [MemberData(nameof(NewRules))]
+    public void HandlesNewRules(string singular, string plural)
+    {
+        Assert.NotEqual(plural, pluralizer.Pluralize(singular));
+        Assert.NotEqual(singular, pluralizer.Singularize(plural));
 
-            Assert.Equal(expected, pluralized);
-            Assert.Equal(word, _pluralizer.Singularize(pluralized));
-        }
+        pluralizer.AddPlural(singular, plural);
+        pluralizer.AddSingular(plural, singular);
 
-        [Theory]
-        [InlineData("cul-de-sac", "culs-de-sac")]
-        [InlineData("mother-in-law", "mothers-in-law")]
-        [InlineData("one-half", "one-halves")]
-        public void HandlesNewRules4(string word, string expected)
-        {
-            _pluralizer.AddPlural(  /* language=regex */ @"((cul|mother)(-de-sac|-in-law))",  "$2s$3");
-            _pluralizer.AddSingular(/* language=regex */ @"((cul|mother)s(-de-sac|-in-law))", "$2$3");
+        Assert.Equal(plural, pluralizer.Pluralize(singular));
+        Assert.Equal(singular, pluralizer.Singularize(plural));
+    }
 
-            var pluralized = _pluralizer.Pluralize(word);
+    [Theory]
+    [InlineData("single", "singular")] // not singles
+    [InlineData("angle", "angular")] // not singles
+    public void HandlesNewRules2(string word, string expected)
+    {
+        pluralizer.AddPlural("((a|si)ng)le", "$1ular");
+        pluralizer.AddSingular("((a|si)ng)ular", "$1le");
 
-            Assert.Equal(expected, pluralized);
-            Assert.Equal(word, _pluralizer.Singularize(pluralized));
-        }
+        var pluralized = pluralizer.Pluralize(word);
 
-        [Fact]
-        public void HandlesInvalidRules()
-        {
-            Assert.Throws<RegexParseException>(() => _pluralizer.AddPlural("a|si)ngle", "$1ngular"));
-            Assert.Throws<RegexParseException>(() => _pluralizer.AddSingular("([^a-z).*", "$1"));
-            Assert.Throws<RegexParseException>(() => _pluralizer.AddUncountable("(|bogus.*"));
-        }
+        Assert.Equal(expected, pluralized);
+        Assert.Equal(word, pluralizer.Singularize(pluralized));
+    }
 
-        [Theory]
-        [InlineData("person", "people", "persons")]
-        [InlineData("schema", "schemata", "schemas")]
-        public void HandlesNewOrUpdatedIrregulars(string singular, string plural, string irregular)
-        {
-            Assert.Equal(plural, _pluralizer.Pluralize(singular));
-            Assert.Equal(singular, _pluralizer.Singularize(plural));
-            Assert.NotEqual(irregular, _pluralizer.Pluralize(singular));
+    [Theory]
+    [InlineData("cul-de-sac", "culs-de-sac")]
+    [InlineData("mother-in-law", "mothers-in-law")]
+    [InlineData("one-half", "ones-half")] // incorrect
+    public void HandlesNewRules3(string word, string expected)
+    {
+        pluralizer.AddPlural(  /* language=regex */ @"(\w+)([-\w]+)+", "$1s$2");
+        pluralizer.AddSingular(/* language=regex */ @"(\w+)s([-\w]+)+", "$1$2");
 
-            _pluralizer.AddOrUpdateIrregular(singular, irregular);
+        var pluralized = pluralizer.Pluralize(word);
 
-            Assert.Equal(irregular, _pluralizer.Pluralize(singular));
-            Assert.Equal(singular, _pluralizer.Singularize(irregular));
-            Assert.Equal(singular, _pluralizer.Singularize(plural));
-        }
+        Assert.Equal(expected, pluralized);
+        Assert.Equal(word, pluralizer.Singularize(pluralized));
+    }
 
-        [Theory]
-        [InlineData("mean", "means")]
-        [InlineData("vertebra", "vertebrae")]
-        public void HandlesNewUncountables(string singular, string plural)
-        {
-            Assert.Equal(plural, _pluralizer.Pluralize(singular));
-            Assert.Equal(singular, _pluralizer.Singularize(plural));
-            
-            _pluralizer.AddUncountable(singular);
-            _pluralizer.AddUncountable(plural);
-            
-            Assert.Equal(singular, _pluralizer.Pluralize(singular));
-            Assert.Equal(plural, _pluralizer.Singularize(plural));
-        }
+    [Theory]
+    [InlineData("cul-de-sac", "culs-de-sac")]
+    [InlineData("mother-in-law", "mothers-in-law")]
+    [InlineData("one-half", "one-halves")]
+    public void HandlesNewRules4(string word, string expected)
+    {
+        pluralizer.AddPlural(  /* language=regex */ @"((cul|mother)(-de-sac|-in-law))", "$2s$3");
+        pluralizer.AddSingular(/* language=regex */ @"((cul|mother)s(-de-sac|-in-law))", "$2$3");
+
+        var pluralized = pluralizer.Pluralize(word);
+
+        Assert.Equal(expected, pluralized);
+        Assert.Equal(word, pluralizer.Singularize(pluralized));
+    }
+
+    [Fact]
+    public void HandlesInvalidRules()
+    {
+        Assert.Throws<RegexParseException>(() => pluralizer.AddPlural("a|si)ngle", "$1ngular"));
+        Assert.Throws<RegexParseException>(() => pluralizer.AddSingular("([^a-z).*", "$1"));
+        Assert.Throws<RegexParseException>(() => pluralizer.AddUncountable("(|bogus.*"));
+    }
+
+    public static TheoryData<string, string, string> Irregulars => FromResourceTrios(Resources.Irregulars);
+
+    [Theory]
+    [MemberData(nameof(Irregulars))]
+    public void HandlesNewOrUpdatedIrregulars(string singular, string plural, string irregular)
+    {
+        Assert.Equal(plural, pluralizer.Pluralize(singular));
+        Assert.Equal(singular, pluralizer.Singularize(plural));
+        Assert.NotEqual(irregular, pluralizer.Pluralize(singular));
+
+        pluralizer.AddOrUpdateIrregular(singular, irregular);
+
+        Assert.Equal(irregular, pluralizer.Pluralize(singular));
+        Assert.Equal(singular, pluralizer.Singularize(irregular));
+        Assert.Equal(singular, pluralizer.Singularize(plural));
+    }
+
+    [Theory]
+    [InlineData("mean", "means")]
+    [InlineData("vertebra", "vertebrae")]
+    public void HandlesNewUncountables(string singular, string plural)
+    {
+        Assert.Equal(plural, pluralizer.Pluralize(singular));
+        Assert.Equal(singular, pluralizer.Singularize(plural));
+
+        pluralizer.AddUncountable(singular);
+        pluralizer.AddUncountable(plural);
+
+        Assert.Equal(singular, pluralizer.Pluralize(singular));
+        Assert.Equal(plural, pluralizer.Singularize(plural));
+    }
+
+    [Theory]
+    [InlineData("vertebra", 3, null, "vertebrae")]
+    [InlineData("dogs", 1, null, "dog")]
+    [InlineData("dog", 5000, null, "dogs")]
+    [InlineData("vote", 11, null, "votes")]
+    [InlineData("cat", 0, null, "cats")]
+    [InlineData("cat", 0, "N0", "0 cats")]
+    [InlineData("vertebra", 3, "", "vertebrae")]
+    [InlineData("vertebra", 3, " ", "vertebrae")]
+    [InlineData("vertebra", 3, "\t", "vertebrae")]
+    [InlineData("dog", 5000, "", "dogs")]
+    [InlineData("dog", 5000, "N0", "5,000 dogs")]
+    [InlineData("person", 44.75, "F2", "44.75 people")]
+    [InlineData("galaxies", 1, "N0", "1 galaxy")]
+    [InlineData("galaxies", 1, null, "galaxy")]
+    [InlineData("galaxy", 2048328473, "N0", "2,048,328,473 galaxies")]
+    [InlineData("galaxy", 2048328473, "E4", "2.0483E+009 galaxies")]
+    [InlineData("respondent", 0.4475, "P2", "44.75% respondents")]
+    public void Formats(string word, double count, string? format, string expected)
+    {
+        Assert.Equal(expected, word.Inflect(count, format));
+    }
+
+
+    [Fact]
+    public void Phrases()
+    {
+        var boilerplate = "The quick brown fox jumps over the lazy dog.";
+
+        var nouns = new string[] { "fox", "dog" };
+        var verbs = new string[] { "jumps" };
         
-        [Theory]
-        [InlineData("vertebra", 3, "3 vertebrae")]
-        [InlineData("dogs", 1, "1 dog")]
-        [InlineData("dog", 5000, "5000 dogs")]
-        [InlineData("vote", 11, "11 votes")]
-        [InlineData("cat", 0, "0 cats")]
-        public void FormatsWithoutFormat(string word, int count, string expected)
+        var result = boilerplate;
+
+        foreach (var noun in nouns)
         {
-            Assert.Equal(expected, _pluralizer.Format(word, count));
+            var inflected = noun.Inflect();
+
+            result = result.Replace(noun, inflected);
         }
 
-        [Theory]
-        [InlineData("vertebra", 3, null, "vertebrae")]
-        [InlineData("vertebra", 3, "", "vertebrae")]
-        [InlineData("vertebra", 3, " ", "vertebrae")]
-        [InlineData("vertebra", 3, "    ", "vertebrae")] // Tab
-        [InlineData("dog", 5000, "",   "dogs")]
-        [InlineData("dog", 5000, "N0", "5,000 dogs")]
-        [InlineData("person", 11, "N2", "11.00 people")]
-        public void FormatsWithFormat(string word, int count, string format, string expected)
+        foreach (var verb in verbs)
         {
-            Assert.Equal(expected, _pluralizer.Format(word, count, format));
+            var inflected = verb.Inflect(false);
+            
+            result = result.Replace(verb, inflected);
         }
+
+        Assert.Equal("The quick brown foxes jump over the lazy dogs.", result);
     }
 }

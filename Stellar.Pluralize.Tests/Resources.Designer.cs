@@ -61,6 +61,26 @@ namespace Stellar.Pluralize.Tests {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to person,people,persons
+        ///schema,schemata,schemas
+        ///child,children,childs
+        ///foot,feet,foots
+        ///tooth,teeth,tooths
+        ///mouse,mice,mouses
+        ///cactus,cacti,cactuses
+        ///focus,foci,focuses
+        ///nucleus,nuclei,nucleuses
+        ///fungus,fungi,funguses
+        ///radius,radii,radiuses
+        ///.
+        /// </summary>
+        internal static string Irregulars {
+            get {
+                return ResourceManager.GetString("Irregulars", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to dingo,dingos
         ///mango,mangoes
         ///echo,echos
