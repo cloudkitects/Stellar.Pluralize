@@ -39,7 +39,11 @@ pluralizer.Format(1, "houses", " ");    // house
 pluralizer.AddPlural("gex", "gexii");
 pluralizer.Pluralize("regex"); // regexii, not regexes
 
-// add two-way rules
+## Symmetric rules
+
+Rules are symmetric (bidirectional) by default
+
+```cs
 pluralizer.AddPlural("(a|si)ngle", "$1ngular");
 pluralizer.AddSingular("(a|si)ngular", "$1ngle");
 pluralizer.Pluralize("single");    // singular, not singles
