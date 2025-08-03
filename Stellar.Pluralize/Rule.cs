@@ -2,9 +2,13 @@
 
 namespace Stellar.Pluralize;
 
-public class Rule(string regex, string replacement, RegexOptions options = RegexOptions.IgnoreCase)
+public class Rule(Regex regex, string replacement)
 {
-    public Regex Regex { get; set; } = new Regex(regex, options);
+    public Regex Regex { get; set; } = regex;
 
     public string Replacement { get; set; } = replacement;
+
+    public Rule(string regex, string replacement, RegexOptions options = RegexOptions.IgnoreCase) : this(new Regex(regex, options), replacement)
+    {
+    }
 }

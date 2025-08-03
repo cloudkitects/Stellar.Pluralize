@@ -4,28 +4,33 @@ using System.Text.RegularExpressions;
 [assembly: InternalsVisibleTo("Stellar.Pluralize.Tests")]
 namespace Stellar.Pluralize;
 
-public static partial class Pluralizer 
+public partial class Pluralizer(
+    List<Rule>? plurals = null,
+    List<Rule>? singulars = null,
+    List<string>? uncountables = null,
+    Dictionary<string, string>? irregularPlurals = null,
+    Dictionary<string, string>? irregulars = null)
 {
-    private static readonly List<Rule> plurals = Rules.Plurals;
-    private static readonly List<Rule> singulars = Rules.Singulars;
-    private static readonly ICollection<string> uncountables = new HashSet<string>(Rules.Uncountables, StringComparer.OrdinalIgnoreCase);
-    private static readonly Dictionary<string, string> irregularPlurals = Rules.IrregularPlurals;
-    private static readonly Dictionary<string, string> irregulars = Rules.Irregulars;
+    private readonly List<Rule> plurals = [.. plurals ?? Rules.Plurals];
+    private readonly List<Rule> singulars = [.. singulars ?? Rules.Singulars];
+    private readonly ICollection<string> uncountables = new HashSet<string>(uncountables ?? Rules.Uncountables, StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> irregularPlurals = new(irregularPlurals ?? Rules.IrregularPlurals);
+    private readonly Dictionary<string, string> irregulars = new(irregulars ?? Rules.Irregulars);
 
     [GeneratedRegex("\\$(\\d{1,2})")]
-    private static partial Regex ReplacementRegex();
+    private partial Regex ReplacementRegex();
 
-    public static string Pluralize(string word)
+    public string Pluralize(string word)
     {
         return Inflect(word);
     }
 
-    public static string Singularize(string word)
+    public string Singularize(string word)
     {
         return Inflect(word, false);
     }
 
-    internal static string Inflect(string word, bool pluralize = true)
+    public string Inflect(string word, bool pluralize = true)
     {
         var replaceables = irregulars;
         var replacements = irregularPlurals;
@@ -73,41 +78,13 @@ public static partial class Pluralizer
         return word;
     }
 
-    public static bool IsSingular(string word) => Singularize(word) == word;
+    public bool IsSingular(string word) => Singularize(word) == word;
 
-    public static bool IsPlural(string word) => Pluralize(word) == word;
-
-    /// <remarks>
-    /// TODO: word:format and other numeric count
-    /// TODO: null or empty format is an indicator for no number display
-    /// TODO: don't overwrite format (better try/catch)
-    /// </remarks>
-    public static string Format(string word, int count, string format = "G")
-    {
-        var quantified = count == 1
-            ? Singularize(word)
-            : Pluralize(word);
-
-        if (string.IsNullOrWhiteSpace(format))
-        {
-            return quantified;
-        }
-
-        try
-        {
-            format = count.ToString(format);
-        }
-        catch
-        {
-            format = count.ToString("G");
-        }
-
-        return $"{format} {quantified}";
-    }
+    public bool IsPlural(string word) => Pluralize(word) == word;
 
     private static string RestoreCase(string word, string newWord)
     {
-        if (word == newWord)
+        if (newWord.Equals(word))
         {
             return newWord;
         }
@@ -122,15 +99,15 @@ public static partial class Pluralizer
             return newWord.ToUpperInvariant();
         }
 
-        if (word == word[0].ToString().ToUpperInvariant() + word[1..].ToLowerInvariant())
+        if (word.ToProperInvariant().Equals(word))
         {
-            return newWord[0].ToString().ToUpperInvariant() + newWord[1..].ToLowerInvariant();
+            return newWord.ToProperInvariant();
         }
 
-        return newWord.ToLowerInvariant();
+        return newWord;
     }
 
-    private static MatchEvaluator Evaluate(string originalWord, string replacement)
+    private MatchEvaluator Evaluate(string originalWord, string replacement)
     {
         return match =>
         {
@@ -139,22 +116,22 @@ public static partial class Pluralizer
     }
 
     #region add rules
-    internal static string SanitizeRegex(string regex)
+    internal static string QualifyRegex(string regex)
     {
-        return $"{(regex[0] != '^' ? "^" : "")}{regex}{(regex[^1] != '$' ? "$" : "")}";
+        return '^' + regex.Trim('^', '$') + '$';
     }
 
-    public static void AddPlural(string regex, string plural, RegexOptions options = RegexOptions.IgnoreCase)
+    public void AddPlural(string regex, string plural, RegexOptions options = RegexOptions.IgnoreCase)
     {
-        plurals.Add(new Rule(SanitizeRegex(regex), plural, options));
+        plurals.Add(new Rule(QualifyRegex(regex), plural, options));
     }
 
-    public static void AddSingular(string regex, string singular, RegexOptions options = RegexOptions.IgnoreCase)
+    public void AddSingular(string regex, string singular, RegexOptions options = RegexOptions.IgnoreCase)
     {
-        singulars.Add(new Rule(SanitizeRegex(regex), singular, options));
+        singulars.Add(new Rule(QualifyRegex(regex), singular, options));
     }
 
-    public static void AddUncountable(string word)
+    public void AddUncountable(string word)
     {
         uncountables.Add(word);
 
@@ -162,7 +139,7 @@ public static partial class Pluralizer
         AddSingular(word, "$0");
     }
 
-    public static void AddOrUpdateIrregular(string singular, string plural)
+    public void AddOrUpdateIrregular(string singular, string plural)
     {
         irregulars[singular] = plural;
         irregularPlurals[plural] = singular;
