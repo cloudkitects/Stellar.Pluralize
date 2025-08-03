@@ -18,10 +18,10 @@ pluralizer.Singularize("Geese"); // Goose
 pluralizer.IsPlural("plates"); // true
 pluralizer.IsSingular("cats"); // false
 
-"dog".Pluralize();         \\ "dogs"
-"House".Pluralize();       \\ "Houses"
-"SUITES".Singularize();    \\ "SUITE"
-"kitchenEtTe".Pluralize(); \\ "kitchenEtTes"
+"dog".Pluralize();         // "dogs"
+"House".Pluralize();       // "Houses"
+"SUITES".Singularize();    // "SUITE"
+"kitchenEtTe".Pluralize(); // "kitchenEtTes"
 
 // plural rules
 pluralizer.AddPlural("gex", "gexii");
@@ -80,7 +80,7 @@ _pluralizer.AddUncountable("(|bogus.*");        // throws
 
 ## Sentences
 
-The library can support basic sentence inflection:
+The library supports basic sentence inflection:
 
 ```cs
     [Fact]
