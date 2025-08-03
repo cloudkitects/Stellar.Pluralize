@@ -23,31 +23,47 @@ pluralizer.IsSingular("cats"); // false
 "SUITES".Singularize();    // "SUITE"
 "kitchenEtTe".Pluralize(); // "kitchenEtTes"
 
-// plural rules
 pluralizer.AddPlural("gex", "gexii");
-
 pluralizer.Pluralize("regex"); // regexii, not regexes
+```
 
-// symmetric rules
+## Symmetric rules
+
+Symmetric rules complement each other--are bidirectional.
+
+```cs
 pluralizer.AddPlural("(a|si)ngle", "$1ngular");
 pluralizer.AddSingular("(a|si)ngular", "$1ngle");
 
 pluralizer.Pluralize("single");    // singular, not singles
 pluralizer.Singularize("angular"); // angle
+```
 
-// irregular (assymetric) rules
-pluralizer.AddorUpdateIrregular("person", "persons");
+## Asymmetric rules
 
-pluralizer.Pluralize("person");    // persons, not people
+Asymmetric (1:_n_ or _n_:1) rules result from rule overrides:
+
+```cs
+pluralizer.AddorUpdateIrregular("person", "persons"); // originally person <=> people
+
+pluralizer.Pluralize("person");    // persons
 pluralizer.Singularize("persons"); // person
 pluralizer.Singularize("people");  // person
+```
 
-// uncountables
+## Uncountable words
+
+```cs
 pluralizer.AddUncountable("paper");
+pluralizer.Pluralize("paper");    // paper
+pluralizer.Pluralize("firmware"); // firmware
+```
 
-pluralizer.Pluralize("paper"); // paper, not papers
- 
- // generic (placeholder) rules
+## Generic rules
+
+Generic rules leverage capture groups:
+
+```cs
 pluralizer.AddPlural(new Regex(@"(\w+)([-\w]+)+", RegexOptions.IgnoreCase),  "$1s$2");
 pluralizer.AddSingular("(\w+)s([-\w]+)+", "$1$2");
 
@@ -55,19 +71,18 @@ pluralizer.Pluralize("cul-de-sac");       // culs-de-sac, not cul-de-sacs
 pluralizer.Singularize("mothers-in-law"); // mother-in-law
 pluralizer.Pluralize("one-half");         // ones-half
 
-// less generic rules
+// less generic...
 pluralizer.AddPlural("((cul|mother)(-de-sac|-in-law))",  "$2s$3");
 pluralizer.AddSingular(new Regex(@"((cul|mother)s(-de-sac|-in-law))"), "$2$3");
 
 pluralizer.Pluralize("cul-de-sac");       // culs-de-sac
 pluralizer.Singularize("mothers-in-law"); // mother-in-law
 pluralizer.Pluralize("one-half");         // one-halves
+```
 
-// invalid regex patterns
-var rule = new Rule("([^a-z).*", "");          // throws
-pluralizer.AddPlural("a|si)ngle", "$1ngular"); // throws
-pluralizer.AddUncountable("(|bogus.*");        // throws
+## Extensions
 
+```cs
 "dog".Inflect(7);         // dogs
 "dogs".Inflect(1, "N0");  // 1 dog
 "cats".Inflect(0);        // cats
@@ -105,6 +120,14 @@ A new set of rules can be created to handle verb conjugation, yet the `Inflect` 
 
         Assert.Equal("The quick brown foxes jump over the lazy dogs.", result);
     }
+```
+
+## Exceptions
+
+```cs
+var rule = new Rule("([^a-z).*", "");          // throws
+pluralizer.AddPlural("a|si)ngle", "$1ngular"); // throws
+pluralizer.AddUncountable("(|bogus.*");        // throws
 ```
 
 # Licence
